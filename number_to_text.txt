@@ -1,0 +1,101 @@
+Function NombreEnTexte(ByVal Nombre As Double) As String
+    Dim Unites As Variant, Dizaines As Variant
+    Dim PartieEntiere As Long, PartieDecimale As Long
+    Dim Texte As String, PartieDecimaleTexte As String
+    
+    ' Définir les tableaux pour les unités et les dizaines
+    Unites = Array("", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix", _
+                   "onze", "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf")
+    Dizaines = Array("", "", "vingt", "trente", "quarante", "cinquante", "soixante", "soixante-dix", "quatre-vingt", "quatre-vingt-dix")
+    
+    ' Séparer la partie entière et la partie décimale
+    PartieEntiere = Int(Nombre)
+    PartieDecimale = Round((Nombre - PartieEntiere) * 100)
+    
+    ' Convertir la partie entière
+    Texte = ConvertirCentaines(PartieEntiere, Unites, Dizaines)
+    
+    ' Ajouter la partie décimale (si elle existe)
+    If PartieDecimale > 0 Then
+        PartieDecimaleTexte = ConvertirCentaines(PartieDecimale, Unites, Dizaines)
+        Texte = Texte & " virgule " & PartieDecimaleTexte
+    End If
+    
+    NombreEnTexte = Texte
+End Function
+
+Function ConvertirCentaines(ByVal Nombre As Long, Unites As Variant, Dizaines As Variant) As String
+    Dim Centaines As Long, Reste As Long
+    Dim Texte As String
+    
+    If Nombre = 0 Then
+        ConvertirCentaines = "zéro"
+        Exit Function
+    End If
+    
+    ' Gérer les centaines
+    Centaines = Int(Nombre / 100)
+    Reste = Nombre Mod 100
+    If Centaines > 0 Then
+        If Centaines > 1 Then
+            Texte = Unites(Centaines) & " cent"
+        Else
+            Texte = "cent"
+        End If
+        If Reste = 0 Then
+            Texte = Texte & "s" ' Ajouter le "s" si c'est un nombre rond
+        End If
+    End If
+    
+    ' Ajouter les dizaines et unités
+    If Reste > 0 Then
+        If Centaines > 0 Then Texte = Texte & " "
+        Texte = Texte & ConvertirDizaines(Reste, Unites, Dizaines)
+    End If
+    
+    ConvertirCentaines = Texte
+End Function
+
+Function ConvertirDizaines(ByVal Nombre As Long, Unites As Variant, Dizaines As Variant) As String
+    Dim Texte As String
+    If Nombre < 20 Then
+        Texte = Unites(Nombre)
+    Else
+        Dim Dizaine As Long, Unite As Long
+        Dizaine = Int(Nombre / 10)
+        Unite = Nombre Mod 10
+        Texte = Dizaines(Dizaine)
+        If Dizaine = 7 Or Dizaine = 9 Then
+            Texte = Dizaines(Dizaine - 1) & "-" & Unites(10 + Unite)
+        ElseIf Unite > 0 Then
+            If Dizaine = 8 Then
+                Texte = Texte & "-" & Unites(Unite) ' pas de "s" à quatre-vingt
+            Else
+                Texte = Texte & " " & Unites(Unite)
+            End If
+        End If
+    End If
+    ConvertirDizaines = Texte
+End Function
+
+
+Private Sub Worksheet_Change(ByVal Target As Range)
+    Dim CelluleCible As Range
+    ' Définir la cellule où écrire la version en lettres
+    Set CelluleCible = Target.Offset(0, 1) ' Écrit dans la cellule à droite de la cellule modifiée
+
+    ' Vérifiez si la cellule modifiée contient un nombre
+    If Not Intersect(Target, Me.Columns("A")) Is Nothing Then
+        If IsNumeric(Target.Value) And Target.Value <> "" Then
+            Application.EnableEvents = False ' Désactiver les événements pour éviter des boucles
+            CelluleCible.Value = NombreEnTexte(Target.Value) ' Utiliser la fonction NombreEnTexte
+            Application.EnableEvents = True ' Réactiver les événements
+        Else
+            ' Si la cellule ne contient pas un nombre, effacer la cellule cible
+            Application.EnableEvents = False
+            CelluleCible.Value = ""
+            Application.EnableEvents = True
+        End If
+    End If
+End Sub
+
