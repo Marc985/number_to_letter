@@ -80,22 +80,64 @@ End Function
 
 
 Private Sub Worksheet_Change(ByVal Target As Range)
-    Dim CelluleCible As Range
-    ' Définir la cellule où écrire la version en lettres
-    Set CelluleCible = Target.Offset(0, 1) ' Écrit dans la cellule à droite de la cellule modifiée
+    Dim Cellule As Range
+    Dim ColonneSourceUnite As String, ColonneSourceNombre As String, ColonneDestination As String
 
-    ' Vérifiez si la cellule modifiée contient un nombre
-    If Not Intersect(Target, Me.Columns("A")) Is Nothing Then
-        If IsNumeric(Target.Value) And Target.Value <> "" Then
-            Application.EnableEvents = False ' Désactiver les événements pour éviter des boucles
-            CelluleCible.Value = NombreEnTexte(Target.Value) ' Utiliser la fonction NombreEnTexte
-            Application.EnableEvents = True ' Réactiver les événements
-        Else
-            ' Si la cellule ne contient pas un nombre, effacer la cellule cible
-            Application.EnableEvents = False
-            CelluleCible.Value = ""
-            Application.EnableEvents = True
-        End If
+    ' Définir les colonnes concernées
+    ColonneSourceUnite = "C" ' Colonne des unités
+    ColonneSourceNombre = "D" ' Colonne des nombres
+    ColonneDestination = "B" ' Colonne des résultats (texte)
+
+    ' Vérifier si la modification concerne les colonnes unités ou nombres
+    If Not Intersect(Target, Me.Columns(ColonneSourceUnite)) Is Nothing Or _
+       Not Intersect(Target, Me.Columns(ColonneSourceNombre)) Is Nothing Then
+       
+        Application.EnableEvents = False ' Désactiver les événements pour éviter les boucles infinies
+        
+        ' Parcourir toutes les cellules modifiées
+        For Each Cellule In Target
+            Dim Ligne As Long
+            Ligne = Cellule.Row ' Obtenir la ligne de la cellule modifiée
+            
+            ' Vérifier que les colonnes unités et nombres contiennent des données valides
+            If IsNumeric(Me.Cells(Ligne, ColonneSourceNombre).Value) And _
+               Me.Cells(Ligne, ColonneSourceUnite).Value <> "" Then
+               
+                ' Récupérer l'unité et le nombre
+                Dim Nombre As Double
+                Dim Unite As String
+                Nombre = Me.Cells(Ligne, ColonneSourceNombre).Value
+                Unite = LCase(Me.Cells(Ligne, ColonneSourceUnite).Value) ' Convertir en minuscules pour standardisation
+                
+                ' Générer le texte avec unité
+                Me.Cells(Ligne + 1, ColonneDestination).Value = GenererTexteAvecUnite(Unite, Nombre)
+            Else
+                ' Effacer la cellule de destination (ligne + 1) si les données sont invalides
+                Me.Cells(Ligne + 1, ColonneDestination).Value = ""
+            End If
+        Next Cellule
+        
+        Application.EnableEvents = True ' Réactiver les événements
     End If
+End Sub
+
+' Fonction pour générer le texte avec unité
+Function GenererTexteAvecUnite(ByVal Unite As String, ByVal Nombre As Double) As String
+    Dim TexteEnLettre As String
+    TexteEnLettre = NombreEnTexte(Nombre) ' Appeler la fonction de conversion des nombres en lettres
+    
+    ' Générer le texte en fonction de l'unité
+    Select Case Unite
+        Case "fft"
+            GenererTexteAvecUnite = "forfait à " & TexteEnLettre
+        Case "kg"
+            GenererTexteAvecUnite = "kilogramme à " & TexteEnLettre
+        Case "litre"
+            GenererTexteAvecUnite = "litre à " & TexteEnLettre
+        Case Else
+            GenererTexteAvecUnite = Unite & " à " & TexteEnLettre ' Par défaut, utiliser l'unité donnée
+    End Select
+End Function
+
 End Sub
 
