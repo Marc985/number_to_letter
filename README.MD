@@ -135,7 +135,7 @@ Function ConvertirDizaines(ByVal Nombre As Long, Unites As Variant, Dizaines As 
 End Function
 
 
-
+vba```
 
 3. ** Evenement:
 
@@ -175,6 +175,7 @@ Private Sub Worksheet_Change(ByVal Target As Range)
         Application.EnableEvents = True ' Réactiver les événements
     End If
 End Sub
+vba```
 
 
 
